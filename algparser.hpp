@@ -33,9 +33,9 @@ namespace AlgParser {
 
 #define DEADCHAR (-1)
 
-#ifndef CBOOLS
-#define CFALSE 0
-#define CTRUE 1
+#ifndef __CBOOLS
+#define __CFALSE 0
+#define __CTRUE 1
 #endif
           
 class AlgorithmParser {
@@ -132,7 +132,7 @@ class AlgorithmParser {
              {
                  int count = 0;
                  for (int i = 0; i < str.size(); i++)
-                     if (isdigit(str[i]) == CTRUE)
+                     if (isdigit(str[i]) == __CTRUE)
                         count++;
                  return count;                                         
              }
