@@ -25,9 +25,12 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
-#include <cmath>
 
-#include "linker.hpp"
+extern "C" {
+       #include <math.h>
+       #include <string.h>
+}
+
 typedef unsigned int uint;
 namespace AlgParser {
 
@@ -137,6 +140,14 @@ class AlgorithmParser {
                  return count;                                         
              }
       private:
+             void remove_blanks(std::string &s) 
+             {
+                 std::string _cpy = "";
+                 for (int i = 0; i < s.size(); ++i)
+                     if (s[i] != ' ')
+                        _cpy+=s[i];
+                 s = _cpy;
+             }
              static int cOccur(std::string s, char _token)
              {
                  int count = 0;
@@ -167,4 +178,5 @@ class AlgorithmParser {
                  return index;                
              }
 };        
+
 };
