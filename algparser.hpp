@@ -82,6 +82,7 @@ class AlgorithmParser {
              virtual volatile double calculate(std::string math)
              {
                  volatile double result = atof(&(math[0]));
+   			     remove_blanks(math);
                  for (int i = 0; i < math.size(); i++)
                  {
                      if (isToken(math[i]) == true)
