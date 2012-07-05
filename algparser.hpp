@@ -25,16 +25,13 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
-
-extern "C" {
-       #include <math.h>
-       #include <string.h>
-}
+#include <cmath>
+#include <sstream>
 
 typedef unsigned int uint;
 namespace AlgParser {
 
-#define DEADCHAR (-1)
+#define __DEADCHAR (-1)
 
 #ifndef __CBOOLS
 #define __CFALSE 0
@@ -42,35 +39,100 @@ namespace AlgParser {
 #endif
           
 class AlgorithmParser {
-      public:              
+      public:          
+             AlgorithmParser(double _value) { this->Value = _value; }
+             AlgorithmParser(void) { this->Value = 0.0; }
+             volatile double Value;              
+             
+             /* <operator_management>
+                * BEGIN
+             */ 
+             
+             template<typename T>             
+             double operator+ (T _increment) { return (this->Value + _increment); }             
+             template<typename T>
+             double operator- (T _decrement) { return (this->Value - _decrement); }
+             template<typename T>
+             double operator* (T _factor) { return (this->Value * _factor); }
+             template<typename T>
+             double operator/ (T _div) {
+                     return (_div != 0) ? (this->Value / _div) : this->Value;
+             }
+             template<typename T>
+             double operator^ (T _exp) { return (this->Value ^ _exp); }
+             template<typename T>
+             double operator% (T _mod) { return (this->Value % _mod); }
+             
+             // <internal access operators>             
+             template<typename T>
+             void operator+= (T _val) { (*this).Value += _val; }
+             template<typename T>
+             void operator-= (T _val) { (*this).Value -= _val; }
+             template<typename T>
+             void operator*= (T _val) { (*this).Value *= _val; }
+             template<typename T>
+             void operator/= (T _val) { 
+                  if (_val > 0)
+                     (*this).Value /= _val; 
+             }
+             template<typename T>
+             void operator^= (T _val) { (*this).Value ^= _val; }
+             template<typename T>
+             void operator%= (T _val) { (*this).Value %= _val; }
+             template<typename T>
+             void operator++ (T) { ((*this).Value)++; }
+             template<typename T>
+             void operator-- (T) { ((*this).Value)--; }
+             // </internal access operators>
+             // <comparison_operators>
+             template<typename T>
+             bool operator< (T _cmp) { return (this->Value < _cmp) ? true : false; }
+             template<typename T>
+             bool operator<= (T _cmp) { return (this->Value <= _cmp) ? true : false; }
+             template<typename T>
+             bool operator> (T _cmp) { return (this->Value > _cmp) ? true : false; }
+             template<typename T>
+             bool operator>= (T _cmp) { return (this->Value >= _cmp) ? true : false; }
+             template<typename T>
+             bool operator== (T _cmp) { return (this->Value == _cmp) ? true : false; }
+             template<typename T>
+             bool operator!= (T _cmp) { return (this->Value != _cmp) ? true : false; }
+             // </comparison_operators>
+                          
+             /* */
+             /* </operator_management>
+                * END
+             */
+             
+             // ...
              // Define AlgorithmParser's const Order of Operations handler
              // Does not /yet/ support nesting!
-             void Bedmass(std::string *s)
+             void Bedmass(std::string &s)
              {
-                  std::string subtext = (*s).substr(FirstIndexOf((*s), '('), FirstIndexOf((*s), ')'));
-                  if (this->isformatted(subtext) == true && (*s).size() >= 3) {
-                     double _result = ((*this).calculate(subtext));
-                     std::string sresult = "";
-                     sresult += (int)_result;
-                     delete &_result;
-                     (*s).replace(FirstIndexOf((*s), '(') - 1, (FirstIndexOf((*s), ')') + 1) - (FirstIndexOf((*s), '(') - 1), sresult);
+                  std::string subtext = s.substr(s.find("(") + 1, s.find(")") - 1);
+                  if (this->isformatted(subtext) == true && (s).size() >= 3) {                     
+                     std::stringstream sObj;
+                     sObj << ((*this).calculate(subtext));
+                     std::string sresult = sObj.str();                                             
+                     s.replace(s.find("(", 0), s.find("(", 0) + subtext.size() + 1, sresult);                                        
                      delete &sresult;
                   }
                   delete &subtext;
              }             
-             // <end_const_definition>
+             // <end_const_definition>                                  
+             
              static bool isformatted(std::string str)
              {
                  bool ret = true;   
-                 if (str.find("(", 0) != (DEADCHAR))
+                 if (str.find("(", 0) != (__DEADCHAR))
                     if (cOccur(str, '(') != cOccur(str, ')'))
                        ret = false;                  
-                 if (str.find(")", 0) != (DEADCHAR))
+                 if (str.find(")", 0) != (__DEADCHAR))
                     if (cOccur(str, '(') != cOccur(str, ')'))
                        ret = false;
                  return ret;                    
              }             
-             static int tokenCount(std::string str)
+             static size_t tokenCount(std::string str)
              {
                  int occur = 0;
                  for (int i = 0; i < str.size(); ++i)
@@ -79,46 +141,49 @@ class AlgorithmParser {
                            occur++;
                  return occur;          
              }
-             virtual volatile double calculate(std::string math)
+             
+             volatile double calculate(std::string math)
              {
-                 volatile double result = atof(&(math[0]));
-   			     remove_blanks(math);
+                 volatile double result = (isdigit(math[0])) ? (atof(&(math[0])) + (0.0)) : 0.0;
                  for (int i = 0; i < math.size(); i++)
                  {
                      if (isToken(math[i]) == true)
                      {
+                         if (i < (math.size() - 1))
+                            if (isToken(math[i + 1]) == true) {
+                               std::cout << "\tError:Syntax\n" << std::endl;
+                               break;
+                            }                                                
                          if (i >= 1 && i < (math.size() - 1))
-                            switch (math[i])
+                            switch (get_token(math[i]))
                             {
-                                case '+':
+                                case PLS:
                                      result += atof(&math[i + 1]);
                                      i++; 
                                 break;  
-                                case '-':
+                                case MIN:
                                      result -= atof(&math[i + 1]);
                                      i++;
                                 break;
-                                case '*':
+                                case MUL:
                                      result *= atof(&math[i + 1]);
                                      i++;
                                 break;  
-                                case '/':
+                                case DIV:
                                      result /= atof(&math[i + 1]);
                                      i++;
                                 break; 
-                                case '^':
+                                case EXP:
                                      result = (pow(result, atof(&math[i + 1])));
                                      i++;
-                                break;
-                                case '!':
-                                     std::cout << (factorial(result)) << std::endl;
                                 break;
                             }                      
                      }               
                  }
+                 this->Value = result;
                  return result;
              }             
-             static signed int bracketCount(std::string s)
+             static int bracketCount(std::string s)
              {
                  int left = 0, right = 0;
                  for (int i = 0; i < s.size(); ++i)
@@ -132,7 +197,7 @@ class AlgorithmParser {
                     return (EOF); 
              }
              
-             static int digitCount(std::string str)
+             static size_t digitCount(std::string str)
              {
                  int count = 0;
                  for (int i = 0; i < str.size(); i++)
@@ -140,15 +205,8 @@ class AlgorithmParser {
                         count++;
                  return count;                                         
              }
-      private:
-             void remove_blanks(std::string &s) 
-             {
-                 std::string _cpy = "";
-                 for (int i = 0; i < s.size(); ++i)
-                     if (s[i] != ' ')
-                        _cpy+=s[i];
-                 s = _cpy;
-             }
+      private:              
+             enum Tokens { PLS, MIN, MUL, DIV, EXP, MOD , NONE='0'};   
              static int cOccur(std::string s, char _token)
              {
                  int count = 0;
@@ -164,6 +222,30 @@ class AlgorithmParser {
                   else
                       return false;
              }
+             virtual Tokens get_token(char c)
+             {
+                     Tokens tok = NONE;
+                     switch (c) {
+                            case '+':
+                                 tok = PLS;
+                            break;
+                            case '-':
+                                 tok = MIN;
+                            break;
+                            case '*':
+                                 tok = MUL;
+                            break;     
+                            case '/':
+                                 tok = DIV;
+                            break;
+                            case '^':
+                                 tok = EXP;
+                            break;
+                            default:
+                                    ;                            
+                     };
+                     return tok;                     
+             }
              long factorial(double dval)
              {
                     long fact = (long)dval;
@@ -171,13 +253,13 @@ class AlgorithmParser {
                         dval *= (long)i;
                     return fact;      
              }
-             inline int FirstIndexOf(std::string str, char c) const {
+             inline size_t FirstIndexOf(std::string str, char c) const {
                  int index = 0;
                  for (uint i = 0; i < str.size(); ++i)
                      if (str[i] == c)
                         break;
                  return index;                
              }
+             
 };        
-
 };
