@@ -39,6 +39,10 @@ namespace AlgParser {
 #endif
           
 class AlgorithmParser {
+      friend std::ostream& operator<<(std::ostream& out, AlgorithmParser A) {                           
+                    out << A.Value;
+                    return out;
+      };
       public:          
              AlgorithmParser(double _value) { this->Value = _value; }
              AlgorithmParser(void) { this->Value = 0.0; }
